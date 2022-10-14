@@ -7,7 +7,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 class AuthController {
-  constructor() {}
+  constructor() { }
 
   public async register(req: Request, res: Response) {
     const { name, email, password, googleToken } = req.body;
@@ -71,9 +71,7 @@ class AuthController {
 
   public async login(req: Request, res: Response) {
     const { email, password } = req.body;
-    console.log(req);
-    
-    
+
     if (!email || !password) {
       return res.status(422).json({ message: "email/password obrigatorios" });
     }
@@ -102,8 +100,6 @@ class AuthController {
 
   public async loginGoogle(req: Request, res: Response) {
     const { email, googleToken } = req.body;
-    console.log(typeof googleToken);
-
     switch (googleToken) {
       case null || undefined:
         return res.status(401).json({ message: "Não autorizado." });
@@ -163,6 +159,39 @@ class AuthController {
       return undefined;
     }
   }
+
+  public async validationToken(req: Request, res: Response) {
+    const { token } = req.body;
+
+    if (process.env.APP_SECRET) {
+      jwt.verify(token, process.env.APP_SECRET, function(err: any, decoded: any){
+
+        if(err){
+          res.status(200).json({error: true, message: 'Token invalido'})
+        }else{
+          if(decoded){
+            console.log(decoded);
+            
+            if (Date.now() >= decoded?.exp * 1000) {
+              res.status(200).json({error: true, message: 'Token expirado'})
+            }else{
+              res.status(200).json({error: false, message: 'Token validado'});
+            }
+          }else{
+            res.status(200).json({error: true, message: 'Token invalido'});
+          }
+          
+        }
+      });
+
+      
+    } else {
+      return res.status(401).json({error: false, data: null})
+    }
+
+
+  }
+
 }
 
 export default new AuthController();
